@@ -107,18 +107,19 @@ Above posterior plots of $\lambda_1$ and $\lambda_2$ for the three models strong
 
 ### Switchpoint Parameter $\tau$
 
-1. Poisson model:
+1. Poisson:
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau1.png"/>
 </p>
 
+2. Zero-Inflated Poisson:
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau2.png"/>
 </p>
 
-3. Negative-Binomial
+3. Negative-Binomial:
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau3.png"/>
