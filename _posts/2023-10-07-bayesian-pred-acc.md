@@ -3,11 +3,12 @@ layout: post
 title: "Bayesian Predictive Accuracy: Coal Mines Disasters Switchpoint Inference Analysis"
 author: "M. Emara"
 categories: journal
+image: expected_lam.png
 ---
 
-The following plot shows the number of coal mining disasters that were observed around the United Kingdom from 1851 to 1962, each observation indicates the number of accidents that involved 10 or more coal minining workers dead, given by Maguire, Pearson & Wynn (1952) and published by R. G. Garrett (1979)
+The following plot shows the number of coal mining disasters that were observed around the United Kingdom from 1851 to 1962, each observation indicates the number of accidents that involved 10 or more coal minining workers dead, given by Maguire, Pearson & Wynn (1952) and published by R. G. Garrett (1979).
 
-![Data bar plot](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/bar_plot.png "Data bar plot").
+![Data bar plot](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/bar_plot.png "Data bar plot")
 
 One can observe a change in the number of observed disaster count over the years, maybe due to technological advances or enforcing more stringent safety rules over the years. The target of our analysis is to infer the switchpoint (year) where the rate of disasters has changed. In doing so, we propose the following models:
 
@@ -89,6 +90,27 @@ $$
   <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/model_c.png"/>
 </p>
 
+## Inference
+We use `pymc` library to perform Bayesian inference and sample from posterior $p(\boldsymbol{\theta} \mid \boldsymbol{Y}$) where $\boldsymbol{\theta}$ represents each model parameters, using Markov Chain Monte Carlo samplers. In the following graphs, we plot the posterior distribution of each model rate parameter and the distribution of the switchpoint random variable $\tau$:
+
+
+### Rate Parameters $\lambda_1$ and $\lambda_2$
+
+![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/lam1.png )
+
+![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/lam2.png )
+
+### Switchpoint Parameter $\tau$
+
+![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau1.png )
+
+![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau2.png )
+
+![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau3.png )
+
+### Expected value of rate parameter over the years $\mathbb{E}[\lambda]$
+
+![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/expected_lam.png )
 
 ## Predictive Accuracy
 ### ELPD as the optimum fit measure
@@ -164,13 +186,24 @@ $$\begin{equation}
 In LOO-CV, given $N$ data points, we fit the model $N$ times using a subset of the dataset denoted as $\boldsymbol{Y}_{-i}$, which is the dataset $\boldsymbol{Y}$ except a single data point $y_i$ that we use to evaluate the fit of the model using the log posterior predictive density $\text{lpd}$:
 
 $$\begin{equation} 
-\text{lpd} = \log \bigg [p(y_i \mid  \boldsymbol{Y}_{-1}) \bigg ] 
+\text{lpd} = \log \bigg [p(y_i \mid  \boldsymbol{Y}_{-i}) \bigg ] 
 \end{equation}$$
 
 after repeating this fit and calculating the log posterior predictive density $N$ times, we estimate $\text{lppd}$ by calculating the average of $\text{lpd}$:
 
 $$\begin{equation} 
-\widehat{\text{lppd}} = \sum_{i=1}^N \log \bigg [p(y_i\mid \boldsymbol{Y}_{-1}) \bigg] 
+\widehat{\text{lppd}} = \sum_{i=1}^N \log \bigg [p(y_i\mid \boldsymbol{Y}_{-1i}) \bigg] 
 \end{equation}$$
 
 To match our Bayesian workflow, we will only use LOO-CV and WAIC to compare our different models.
+
+### Results
+We used `arviz` library to calculate both LOO-CV and WAIC to compare the three models:
+
+1. LOO-CV
+![LOO plot](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/elpd_loo.png "LOO plot")
+
+2. WAIC
+
+![WAIC plot](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/elpd_waic.png "WAIC plot")
+
