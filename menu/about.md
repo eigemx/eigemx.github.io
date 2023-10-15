@@ -1,7 +1,7 @@
 ---
 layout: page
-title: Anout me
+title: About me
 permalink: /about
 ---
 
-## Coming soon!
+### Coming soon!
