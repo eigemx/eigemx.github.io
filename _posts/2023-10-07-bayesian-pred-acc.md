@@ -3,7 +3,6 @@ layout: post
 title: "Bayesian Predictive Accuracy: Coal Mines Disasters Switchpoint Inference Analysis"
 author: "M. Emara"
 categories: journal
-image: expected_lam.png
 ---
 
 The following plot shows the number of coal mining disasters that were observed around the United Kingdom from 1851 to 1962, each observation indicates the number of accidents that involved 10 or more coal minining workers dead, given by Maguire, Pearson & Wynn (1952) and published by R. G. Garrett (1979).
