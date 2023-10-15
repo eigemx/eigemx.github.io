@@ -62,6 +62,7 @@ $$ \log p(y=c|x, \theta) = \log{\pi_c} - \frac{1}{2}|2\pi \Sigma_c| - \underbrac
 
 And such model is called Quadratic Discriminator giving the name **Quadratic Discriminator Analysis (QDA)**, because as we see from equation (7), $f(x)$ is a quadratic function of $x$. 
 And this is the decision boundary for our classifier.
+
 ![alt text](/assets/img/qda_decision_boundaries.png)
 
 One of the issues of our QDA classifier is that it's clearly overfitting. but, if we force our covariance matrix $\Sigma_c$ to be shared across all classes $(\Sigma_c = \Sigma)$, defined as:
@@ -80,6 +81,7 @@ $$
 
 
 From equation (8), it's evident that our discriminant function in the case of LDA depends on $x$ linearly, and our decision boundary will be linear. And this is the decision boundary for such case:
+
 ![alt text](/assets/img/lda_decision_boundaries.png)
 
 Which seems as if we applied regularization to our classifier/discriminator, and now our classifer can generalize better.
