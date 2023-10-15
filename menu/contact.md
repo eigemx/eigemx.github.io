@@ -4,4 +4,4 @@ title: Contact
 permalink: /contact
 ---
 
-If you are having any problems, any questions or suggestions, feel free to [tweet at me](https://twitter.com/intent/eigemx)
+Feel free to [tweet at me](https://twitter.com/intent/eigemx), or through email at: m.a.emara[at]live[dot]com
