@@ -99,21 +99,31 @@ We use `pymc` library to perform Bayesian inference and sample from posterior $p
 
 ![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/lam2.png )
 
+Above posterior plots of $\lambda_1$ and $\lambda_2$ for the three models strongly justify our hypothesis that the rate parameter $\lambda$ is not fixed and did change over the years.
+
 ### Switchpoint Parameter $\tau$
+
+1. Poisson model:
 
 ![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau1.png )
 
+2. Zero-Inflated Poisson
 ![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau2.png )
 
+3. Negative-Binomial
 ![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau3.png )
 
-### Expected value of rate parameter over the years $\mathbb{E}[\lambda]$
+Above trace plots (we have two chains, hence the blue and light-blue overlapped histograms) shows each model's belief about the value of $\tau$ where the rate of change might have taken place. Naturally, The posterior distribution of $\tau$ in each model differ but the mode of each is around the year 1892.
+
+The beauty of Bayesian statistics is that we don't report a single point-estimate of $\lambda$ or $\tau$ but a complete distribution that reflects our uncertainty of our models' parameters. However, we can plot the expected value of rate parameter over the years $\mathbb{E}[\lambda]$
 
 ![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/expected_lam.png )
 
 ## Predictive Accuracy
 ### ELPD as the optimum fit measure
 **Disclaimer**: The following section is heavily based on Andrew Gelman's book "Bayesian Data Analysis" and Ben Lambert's "Student's Guide to Bayesian Statistics".
+
+Given the three models we built, how do we compare them? And how do we tell which one is the best?
 
 When assessing the accuracy of a predictive model, we usually don't know the optimum measure (such as classification accuracy and monetary cost As Gelamn et al. lists them), and in such cases we turn to generic score functions and rules. *Score functions* are used in point prediction, while *score rules* are used in probabilistic prediction to report full uncertainty over new data point $\tilde{y}$
 
@@ -197,7 +207,7 @@ $$\begin{equation}
 To match our Bayesian workflow, we will only use LOO-CV and WAIC to compare our different models.
 
 ### Results
-We used `arviz` library to calculate both LOO-CV and WAIC to compare the three models:
+We used `arviz` library to calculate both LOO-CV and WAIC to compare the three models (for the following plots, the higher the value of LOO and WAIC, the better is the model):
 
 1. LOO-CV
 ![LOO plot](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/elpd_loo.png "LOO plot")
@@ -206,3 +216,4 @@ We used `arviz` library to calculate both LOO-CV and WAIC to compare the three m
 
 ![WAIC plot](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/elpd_waic.png "WAIC plot")
 
+We conclude that the Poisson model is the best out of the three (and also the simplest).
