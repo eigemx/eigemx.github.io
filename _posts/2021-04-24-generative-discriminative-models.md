@@ -4,7 +4,6 @@ title: "Probabilistic Generative and Discriminative Models"
 author: "M. Emara"
 categories: journal
 tags: [probabilistic,generative,discriminative]
-image: mle_covariance_contours.png
 ---
 
 ## Introduction
