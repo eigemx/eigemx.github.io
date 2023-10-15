@@ -107,19 +107,19 @@ Above posterior plots of $\lambda_1$ and $\lambda_2$ for the three models strong
 
 ### Switchpoint Parameter $\tau$
 
-1. Poisson:
+Poisson:
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau1.png"/>
 </p>
 
-2. Zero-Inflated Poisson:
+Zero-Inflated Poisson:
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau2.png"/>
 </p>
 
-3. Negative-Binomial:
+Negative-Binomial:
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau3.png"/>
@@ -224,14 +224,14 @@ To match our Bayesian workflow, we will only use LOO-CV and WAIC to compare our 
 ### Results
 We used `arviz` library to calculate both LOO-CV and WAIC to compare the three models (for the following plots, the higher the value of LOO and WAIC, the better is the model):
 
-1. LOO-CV
+LOO-CV
 
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/elpd_loo.png"/>
 </p>
 
-2. WAIC
+WAIC
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/elpd_waic.png"/>
