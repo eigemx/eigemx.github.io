@@ -95,9 +95,13 @@ We use `pymc` library to perform Bayesian inference and sample from posterior $p
 
 ### Rate Parameters $\lambda_1$ and $\lambda_2$
 
-![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/lam1.png )
+<p align="center">
+  <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/lam1.png"/>
+</p>
 
-![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/lam2.png )
+<p align="center">
+  <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/lam2.png"/>
+</p>
 
 Above posterior plots of $\lambda_1$ and $\lambda_2$ for the three models strongly justify our hypothesis that the rate parameter $\lambda$ is not fixed and did change over the years.
 
@@ -105,19 +109,29 @@ Above posterior plots of $\lambda_1$ and $\lambda_2$ for the three models strong
 
 1. Poisson model:
 
-![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau1.png )
+<p align="center">
+  <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau1.png"/>
+</p>
 
-2. Zero-Inflated Poisson
-![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau2.png )
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau2.png"/>
+</p>
 
 3. Negative-Binomial
-![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau3.png )
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/tau3.png"/>
+</p>
 
 Above trace plots (we have two chains, hence the blue and light-blue overlapped histograms) shows each model's belief about the value of $\tau$ where the rate of change might have taken place. Naturally, The posterior distribution of $\tau$ in each model differ but the mode of each is around the year 1892.
 
 The beauty of Bayesian statistics is that we don't report a single point-estimate of $\lambda$ or $\tau$ but a complete distribution that reflects our uncertainty of our models' parameters. However, we can plot the expected value of rate parameter over the years $\mathbb{E}[\lambda]$
 
-![](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/expected_lam.png )
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/expected_lam.png"/>
+</p>
 
 ## Predictive Accuracy
 ### ELPD as the optimum fit measure
@@ -210,10 +224,16 @@ To match our Bayesian workflow, we will only use LOO-CV and WAIC to compare our 
 We used `arviz` library to calculate both LOO-CV and WAIC to compare the three models (for the following plots, the higher the value of LOO and WAIC, the better is the model):
 
 1. LOO-CV
-![LOO plot](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/elpd_loo.png "LOO plot")
+
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/elpd_loo.png"/>
+</p>
 
 2. WAIC
 
-![WAIC plot](https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/elpd_waic.png "WAIC plot")
+<p align="center">
+  <img src="https://raw.githubusercontent.com/eigemx/eigemx.github.io/gh-pages/assets/img/elpd_waic.png"/>
+</p>
 
 We conclude that the Poisson model is the best out of the three (and also the simplest).
