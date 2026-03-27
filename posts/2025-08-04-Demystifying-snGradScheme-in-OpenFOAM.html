@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eigemx | Demystifying snGradScheme in OpenFOAM</title>
+    <link rel="stylesheet" href="../static/css/style.css">
+    <script type="text/javascript" async
+        src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
+    </script>
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            const htmlElement = document.documentElement;
+            const pygmentsLink = document.createElement('link');
+            pygmentsLink.rel = 'stylesheet';
+            document.head.appendChild(pygmentsLink);
+
+            // Function to get system preference
+            const getSystemPreference = () => {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    return 'dark';
+                }
+                return 'light';
+            };
+
+            // Use saved theme or system preference
+            const theme = savedTheme || getSystemPreference();
+
+            if (theme === 'light') {
+                htmlElement.classList.remove('dark-mode');
+                pygmentsLink.href = '../static/css/pygments-rose-pine-dawn.css';
+            } else {
+                htmlElement.classList.add('dark-mode');
+                pygmentsLink.href = '../static/css/pygments-rose-pine.css';
+            }
+        })();
+    </script>
+</head>
+<body data-path-prefix="../">
+    <div class="container">
+        <header>
+            <a href="../index.html" class="blog-title">eigemx</a>
+            <div class="nav-container">
+                <nav>
+                    <a href="../index.html">home</a>
+                    <a href="../about.html">about</a>
+                </nav>
+                <div id="theme-switcher" class="theme-switcher"></div>
+            </div>
+        </header>
+        <div class="content">
+            
+            <h1>Demystifying snGradScheme in OpenFOAM</h1>
+            
+            <p>What happens when you type <code>gradSchemes { default corrected; }</code>? While it seems like a simple keyword, you are selecting a powerful, pluggable piece of C++ code that dictates how gradients are calculated across the entire mesh. This choice has profound implications for the accuracy, stability, and performance of your simulation.</p>
+<p>Today, we'll pull back the curtain on the <code>snGradScheme</code> framework. We'll explore how it works, what the common schemes <em>actually</em> do, and see exactly where they impact the matrices and source terms in your simulation's equations.</p>
+<h2>What is <code>snGrad</code>?</h2>
+<p>First, the name. <code>snGrad</code> stands for <strong>Surface-Normal Gradient</strong>. In the Finite Volume Method (FVM), we discretize equations over control volumes (cells). To evaluate a term containing a gradient, like the diffusion term <code>∇ ⋅ (Γ ∇φ)</code>, we use Gauss's theorem to convert the volume integral into a sum of fluxes over the cell's faces:</p>
+<div class="arithmatex">\[
+\int_V \nabla \cdot (\Gamma \nabla\phi) \, dV = \sum_f \int_{S_f} (\Gamma \nabla\phi) \cdot d\mathbf{S} \approx \sum_f \Gamma_f (\nabla\phi)_f \cdot \mathbf{S}_f
+\]</div>
+<p>The crucial term here is <code>(∇φ)_f ⋅ S_f</code>, which represents the flux of the gradient across a face. This requires calculating the component of the gradient <code>∇φ</code> that is normal to the face <code>f</code>. This is the job of the <code>snGrad</code> schemes.</p>
+<h2>Explicit vs. Implicit: The Two Roles of <code>snGrad</code></h2>
+<p>A common misconception is that <code>gradSchemes</code> are only used for explicit calculations, like when you want to visualize the pressure gradient. While that is one use, their more critical role is in the <em>implicit</em> discretization of differential operators.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Namespace</th>
+<th style="text-align: left;">Treatment</th>
+<th style="text-align: left;">How <code>snGrad</code> is Used</th>
+<th style="text-align: left;">Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong><code>fvc::grad(p)</code></strong></td>
+<td style="text-align: left;"><strong>Explicit</strong></td>
+<td style="text-align: left;">Directly called to compute the gradient field from known values.</td>
+<td style="text-align: left;">A <code>volField</code> (a field of data).</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong><code>fvm::laplacian(nu, U)</code></strong></td>
+<td style="text-align: left;"><strong>Implicit</strong></td>
+<td style="text-align: left;">Its underlying logic and coefficients are used to build the <code>A</code> matrix and <code>b</code> source vector in <code>Ax=b</code>.</td>
+<td style="text-align: left;">An <code>fvMatrix</code> (a system of equations).</td>
+</tr>
+</tbody>
+</table>
+<p>When you write <code>fvm::laplacian(nu, U)</code>, OpenFOAM uses your chosen <code>snGrad</code> scheme to determine how the unknown field <code>U</code> in one cell implicitly affects its neighbors. This relationship is what forms the coefficients of the linear system that gets solved at every time step.</p>
+<h2>A Deep Dive: <code>orthogonal</code>, <code>uncorrected</code>, and <code>corrected</code></h2>
+<p>To understand how these schemes work, let's visualize a non-orthogonal face between two cells, an "owner" (P) and a "neighbour" (N).</p>
+<p><img alt="Non-Orthogonal Face Diagram" src="https://www.openfoam.com/documentation/guides/latest/doc/schemes-sngrad-schematic.png" /></p>
+<ul>
+<li><span class="arithmatex">\(d\)</span>: The vector connecting the cell centers (from P to N).</li>
+<li><span class="arithmatex">\(n\)</span> : The surface area vector of the shared face. It is always normal to the face.</li>
+</ul>
+<p>In a non-orthogonal mesh, <strong><code>d</code> is not parallel to <code>n</code></strong>. This misalignment is the source of numerical error that schemes must handle.</p>
+<h3>1. <code>orthogonal</code></h3>
+<p>This is the simplest, fastest, and most inaccurate scheme for real-world meshes. It operates on a bold assumption: it pretends the mesh is perfectly orthogonal.</p>
+<ul>
+<li><strong>Concept:</strong> It assumes the cell-center vector <code>d</code> is perfectly aligned with the face normal <code>S_f</code>.</li>
+<li><strong>Equation:</strong> The surface-normal gradient is approximated as:
+  $$ (\nabla\phi)_f \cdot \mathbf{S}_f \approx \frac{|\mathbf{S}_f|}{ |\mathbf{d}|} (\phi_N - \phi_P) $$</li>
+<li><strong>Code:</strong> It achieves this by using the most basic geometric coefficients from the mesh.</li>
+</ul>
+<div class="codehilite"><pre><span></span><code><span class="w">  </span><span class="c1">// In src/finiteVolume/finiteVolume/snGradSchemes/orthogonalSnGrad/orthogonalSnGrad.H</span>
+<span class="w">  </span><span class="k">virtual</span><span class="w"> </span><span class="n">tmp</span><span class="o">&lt;</span><span class="n">surfaceScalarField</span><span class="o">&gt;</span><span class="w"> </span><span class="n">deltaCoeffs</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">VolField</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;&amp;</span><span class="p">)</span><span class="w"> </span><span class="k">const</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="o">-&gt;</span><span class="n">mesh</span><span class="p">().</span><span class="n">deltaCoeffs</span><span class="p">();</span>
+<span class="w">  </span><span class="p">}</span>
+</code></pre></div>
+
+<h3>2. <code>uncorrected</code></h3>
+<p>This scheme is smarter. It acknowledges that the mesh is non-orthogonal but chooses not to apply an explicit correction for it.</p>
+<ul>
+<li><strong>Concept:</strong> It correctly calculates the component of the cell-center vector <code>d</code> that is normal to the face. It uses the true projection but ignores the component of the gradient that arises from the misalignment.</li>
+<li><strong>Equation:</strong> The approximation uses the dot product to find the correct projection distance.
+  $$ (\nabla\phi)_f \cdot \mathbf{S}_f \approx \frac{|\mathbf{S}_f|^2}{\mathbf{d} \cdot \mathbf{S}_f} (\phi_N - \phi_P) $$
+  The term <code>d ⋅ S_f</code> correctly accounts for the angle between the cell-center vector and the face normal.</li>
+<li><strong>Code:</strong> It uses the <code>nonOrthDeltaCoeffs</code>, which contain these more accurate geometric factors.</li>
+</ul>
+<div class="codehilite"><pre><span></span><code><span class="w">  </span><span class="c1">// In src/finiteVolume/finiteVolume/snGradSchemes/uncorrectedSnGrad/uncorrectedSnGrad.H</span>
+<span class="w">  </span><span class="k">virtual</span><span class="w"> </span><span class="n">tmp</span><span class="o">&lt;</span><span class="n">surfaceScalarField</span><span class="o">&gt;</span><span class="w"> </span><span class="n">deltaCoeffs</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">VolField</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;&amp;</span><span class="p">)</span><span class="w"> </span><span class="k">const</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="k">this</span><span class="o">-&gt;</span><span class="n">mesh</span><span class="p">().</span><span class="n">nonOrthDeltaCoeffs</span><span class="p">();</span>
+<span class="w">  </span><span class="p">}</span>
+</code></pre></div>
+
+<h3>3. <code>corrected</code></h3>
+<p>This is the workhorse for most general-purpose CFD. It provides the full picture by taking the accurate orthogonal approximation from <code>uncorrected</code> and adding an explicit term to account for the non-orthogonality.</p>
+<ul>
+<li><strong>Concept:</strong> The gradient at the face is decomposed into an implicit orthogonal part and an explicit non-orthogonal correction.</li>
+</ul>
+<div class="arithmatex">\[ (\nabla\phi)_f \cdot \mathbf{S}_f = \underbrace{\frac{|\mathbf{S}_f|^2}{\mathbf{d} \cdot \mathbf{S}_f} (\phi_N - \phi_P)}_{ \text{Implicit Part}} + \underbrace{ \left( (\nabla\phi)_f - \frac{\mathbf{d}}{|\mathbf{d}|^2}(\phi_N - \phi_P) \right) \cdot \mathbf{S}_f}_{ \text{Explicit Correction}} \]</div>
+<p>This separation into an implicit part and an explicit correction is the key to how it's implemented in the code.</p>
+<h2>The Laplacian Scheme: Where the Matrix is Built</h2>
+<p>We've seen that the <code>snGradScheme</code> provides the <em>rules</em> for the calculation, but where is the matrix actually assembled? This happens inside the chosen <code>laplacianScheme</code>. The default, <code>Gauss</code>, is the most common.</p>
+<p>The <code>gaussLaplacianScheme</code> acts as the "builder." It takes the diffusivity (e.g., <code>nu</code>), looks up your chosen <code>snGradScheme</code> from <code>fvSchemes</code>, and uses it to construct the <code>fvMatrix</code> (the <code>A</code> matrix and <code>b</code> source vector).</p>
+<p>Here is a simplified view of the code that performs this magic, found in <code>src/finiteVolume/finiteVolume/laplacianSchemes/gaussLaplacianScheme/gaussLaplacianScheme.C</code>:</p>
+<div class="codehilite"><pre><span></span><code><span class="w">  </span><span class="c1">// Simplified from gaussLaplacianScheme.C</span>
+
+<span class="w">  </span><span class="c1">// The &#39;fvmLaplacian&#39; function is called when you write fvm::laplacian(...)</span>
+<span class="w">  </span><span class="k">template</span><span class="o">&lt;</span><span class="k">class</span><span class="w"> </span><span class="nc">Type</span><span class="p">,</span><span class="w"> </span><span class="k">class</span><span class="w"> </span><span class="nc">GType</span><span class="o">&gt;</span>
+<span class="w">  </span><span class="n">tmp</span><span class="o">&lt;</span><span class="n">fvMatrix</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;&gt;</span>
+<span class="w">  </span><span class="n">Foam</span><span class="o">::</span><span class="n">gaussLaplacianScheme</span><span class="o">&lt;</span><span class="n">Type</span><span class="p">,</span><span class="w"> </span><span class="n">GType</span><span class="o">&gt;::</span><span class="n">fvmLaplacian</span>
+<span class="w">  </span><span class="p">(</span>
+<span class="w">      </span><span class="k">const</span><span class="w"> </span><span class="n">GeometricField</span><span class="o">&lt;</span><span class="n">Type</span><span class="p">,</span><span class="w"> </span><span class="n">fvPatchField</span><span class="p">,</span><span class="w"> </span><span class="n">volMesh</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">vf</span><span class="p">,</span>
+<span class="w">      </span><span class="k">const</span><span class="w"> </span><span class="n">GeometricField</span><span class="o">&lt;</span><span class="n">GType</span><span class="p">,</span><span class="w"> </span><span class="n">fvsPatchField</span><span class="p">,</span><span class="w"> </span><span class="n">surfaceMesh</span><span class="o">&gt;&amp;</span><span class="w"> </span><span class="n">gamma</span>
+<span class="w">  </span><span class="p">)</span>
+<span class="w">  </span><span class="p">{</span>
+<span class="w">      </span><span class="c1">// ... (Matrix setup) ...</span>
+
+<span class="w">      </span><span class="c1">// 1. Get the geometric coefficients from the chosen snGrad scheme (e.g., corrected)</span>
+<span class="w">      </span><span class="k">const</span><span class="w"> </span><span class="n">surfaceScalarField</span><span class="o">&amp;</span><span class="w"> </span><span class="n">deltaCoeffs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">snGradScheme_</span><span class="p">().</span><span class="n">deltaCoeffs</span><span class="p">(</span><span class="n">vf</span><span class="p">);</span>
+
+<span class="w">      </span><span class="c1">// 2. IMPLICIT PART: Build the matrix coefficients (off-diagonals of A)</span>
+<span class="w">      </span><span class="c1">//    gamma is the diffusivity (e.g., nu)</span>
+<span class="w">      </span><span class="c1">//    This term becomes the coefficient for the neighbour cell in the owner cell&#39;s equation.</span>
+<span class="w">      </span><span class="n">internalCoeffs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">gamma</span><span class="p">.</span><span class="n">internalField</span><span class="p">()</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">deltaCoeffs</span><span class="p">;</span>
+
+<span class="w">      </span><span class="c1">// ... (Boundary condition handling) ...</span>
+
+<span class="w">      </span><span class="c1">// 3. EXPLICIT PART: If the scheme is &quot;corrected&quot;, add the correction to the source vector (b)</span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">snGradScheme_</span><span class="p">().</span><span class="n">corrected</span><span class="p">())</span>
+<span class="w">      </span><span class="p">{</span>
+<span class="w">          </span><span class="c1">// This calls the correction() function on the correctedSnGrad object</span>
+<span class="w">          </span><span class="k">const</span><span class="w"> </span><span class="n">tmp</span><span class="o">&lt;</span><span class="n">SurfaceField</span><span class="o">&lt;</span><span class="n">Type</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">tfaceCorr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">snGradScheme_</span><span class="p">().</span><span class="n">correction</span><span class="p">(</span><span class="n">vf</span><span class="p">);</span>
+
+<span class="w">          </span><span class="c1">// The correction is added to the SOURCE TERM (b), not the matrix (A)</span>
+<span class="w">          </span><span class="c1">// This makes the correction explicit, as it&#39;s based on values from the previous iteration.</span>
+<span class="w">          </span><span class="n">forAll</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span><span class="w"> </span><span class="n">facei</span><span class="p">)</span>
+<span class="w">          </span><span class="p">{</span>
+<span class="w">              </span><span class="n">source</span><span class="p">[</span><span class="n">owner</span><span class="p">[</span><span class="n">facei</span><span class="p">]]</span><span class="w">     </span><span class="o">-=</span><span class="w"> </span><span class="n">tfaceCorr</span><span class="p">.</span><span class="n">ref</span><span class="p">()[</span><span class="n">facei</span><span class="p">];</span>
+<span class="w">              </span><span class="n">source</span><span class="p">[</span><span class="n">neighbour</span><span class="p">[</span><span class="n">facei</span><span class="p">]]</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">tfaceCorr</span><span class="p">.</span><span class="n">ref</span><span class="p">()[</span><span class="n">facei</span><span class="p">];</span>
+<span class="w">          </span><span class="p">}</span>
+<span class="w">      </span><span class="p">}</span>
+<span class="w">      </span><span class="c1">// ... (Final matrix assembly) ...</span>
+<span class="w">  </span><span class="p">}</span>
+</code></pre></div>
+
+<p>This code beautifully illustrates the separation of concerns:</p>
+<ul>
+<li>The <strong>implicit part</strong> of the gradient (<code>deltaCoeffs</code>) is multiplied by the diffusivity and used to build the main and off-diagonal coefficients of the <code>A</code> matrix. This part is numerically stable and connects the unknown <code>vf</code> values between adjacent cells.</li>
+<li>The <strong>explicit part</strong> (<code>correction()</code>) is calculated using known field values and is added to the source vector <code>b</code>. This ensures that even complex corrections don't destabilize the matrix, at the cost of being one time-step "behind."</li>
+</ul>
+<h2>A Quick Look at Other Schemes</h2>
+<p>While the three schemes above are the most fundamental, OpenFOAM provides others for specific needs:</p>
+<ul>
+<li><strong><code>limited</code></strong>: A wrapper scheme used to improve stability. It limits the magnitude of the non-orthogonal correction from a sub-scheme (e.g., <code>limited corrected 0.5;</code>).</li>
+<li><strong><code>linearFit</code> &amp; <code>quadraticFit</code></strong>: Higher-order schemes that fit a polynomial to cell values around a face to compute a more accurate gradient. They are more computationally expensive.</li>
+<li><strong><code>faceCorrected</code></strong>: An alternative to the standard <code>corrected</code> scheme that uses interpolation to the face vertices, which can be more robust on highly skewed meshes.</li>
+</ul>
+<h2>Conclusion</h2>
+<p>The <code>snGradScheme</code> framework in OpenFOAM is a cornerstone of its numerical engine. Your choice in <code>fvSchemes</code> is not just a keyword; it's a selection of a specific numerical strategy that defines:</p>
+<ol>
+<li>The geometric coefficients used for the primary gradient calculation.</li>
+<li>Whether an explicit non-orthogonal correction is added.</li>
+<li>How the implicit matrix and explicit source terms are constructed for operators like <code>fvm::laplacian</code>.</li>
+</ol>
+<p>Understanding the difference between <code>orthogonal</code>, <code>uncorrected</code>, and <code>corrected</code> empowers you to make more informed decisions, leading to more accurate and stable simulations. The next time you set up a case, you'll know exactly what's happening under the hood.</p>
+        </div>
+        <footer>
+            <p>Made with ❤️ using Skynet - eigemx 2025</p>
+            <div class="social-icons">
+                <a href="https://github.com/eigemx" target="_blank" rel="noopener noreferrer">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-github" viewBox="0 0 16 16">
+                        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.012 8.012 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+                    </svg>
+                </a>
+                <a href="https://x.com/eigemx" target="_blank" rel="noopener noreferrer">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-twitter-x" viewBox="0 0 16 16">
+                        <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.602.75Zm-.86 13.028h1.36L4.323 2.145H2.865l8.875 11.633Z"/>
+                    </svg>
+                </a>
+            </div>
+        </footer>
+    </div>
+    
+    <script src="../static/js/main.js"></script>
+</body>
+</html>

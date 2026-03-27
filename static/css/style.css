@@ -1,0 +1,416 @@
+:root {
+    --bg-color: #faf4ed;
+    --text-color: #575279;
+    --link-color: #b463a9;
+    --code-bg-color: #f4ede4;
+    --code-text-color: #575279;
+    --heading-color: #2d7d9a;
+    --subtle-color: #9890a5;
+    --overlay-color: #d8caac;
+    --love-color: #b4637a;
+    --gold-color: #ea9d34;
+    --surface-color: #f4ede4;
+}
+
+html.dark-mode {
+    --bg-color: #191724;
+    --text-color: #e0def4;
+    --link-color: #c4a7e7;
+    --code-bg-color: #232136;
+    --code-text-color: #e0def4;
+    --heading-color: #9ccfd8;
+    --subtle-color: #6e6a86;
+    --overlay-color: #26233a;
+    --love-color: #eb6f92;
+    --gold-color: #f6c177;
+    --surface-color: #1f1d2b;
+}
+
+
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap');
+
+html {
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Atkinson Hyperlegible', sans-serif;
+    font-weight: 400;
+    line-height: 1.7;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    transition: background-color 0.3s, color 0.3s;
+    overflow-x: hidden;
+}
+
+.container {
+    max-width: 850px;
+    width: 100%;
+    margin: 4em auto 2em auto; /* Top, Right, Bottom, Left */
+    padding: 0 2em;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+}
+
+@media screen and (max-width: 768px) {
+    .container {
+        padding: 0 1em;
+    }
+    body {
+        font-size: 14px;
+    }
+    
+    /* Prevent long lines from causing horizontal overflow */
+    * {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+    
+    pre, code {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+}
+
+header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    padding: 1em 2em;
+    margin: 0;
+}
+
+@media screen and (max-width: 768px) {
+    header {
+        padding: 1em;
+    }
+}
+
+header a {
+    color: var(--link-color);
+    text-decoration: none;
+    margin: 0 0.25em;
+    font-size: 1em;
+    font-weight: bold;
+    display: inline-block;
+    overflow-wrap: break-word;
+    font-family: 'Fira Code', monospace; /* Explicitly Space Mono */
+    font-weight: 700;
+    font-size: 15px;
+    list-style: none;
+    text-indent: 0;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+main {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    font-size: 0.8em;
+}
+
+.content h1,
+.content h2,
+.content h3,
+.content h4,
+.content h5,
+.content h6 {
+    color: var(--heading-color);
+}
+
+.blog-title {
+    display: inline-block;
+    overflow-wrap: break-word;
+    font-family: 'Fira Code', monospace; /* Explicitly Space Mono */
+    font-weight: 700;
+    font-size: 20px;
+    color: var(--text-color);
+    list-style: none;
+    text-indent: 0;
+    vertical-align: middle;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.theme-switcher {
+    cursor: pointer;
+    font-size: 1.5em;
+    margin-left: 20px;
+    color: var(--link-color);
+}
+
+.content {
+    margin-top: 20px;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    overflow-x: hidden;
+}
+
+.content p,
+.content ul,
+.content ol,
+.content blockquote {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.0em;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.content a {
+    color: var(--link-color);
+    text-decoration: underline;
+}
+
+/* Styling for inline code */
+.content p code,
+.content ul code,
+.content ol code,
+.content blockquote code {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.95em; /* Adjusted font size for inline code */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.post-list {
+    list-style: none;
+    padding: 0;
+}
+
+.post-list li {
+    margin-bottom: 1em;
+}
+
+.post-list li a {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: var(--link-color);
+    text-decoration: none;
+}
+
+table {
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+}
+
+@media screen and (max-width: 768px) {
+    table {
+        font-size: 0.9em;
+    }
+}
+
+.post-list li a:hover {
+    text-decoration: underline;
+}
+
+.post-date {
+    font-size: 0.9em;
+    color: #aaa;
+    margin-left: 1em;
+}
+
+.codehilite pre {
+    background-color: transparent; /* Removed background */
+    padding: 1em;
+    border-radius: 5px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+@media screen and (max-width: 768px) {
+    .codehilite pre {
+        overflow-x: auto;
+        white-space: pre;
+        word-wrap: normal;
+        overflow-wrap: normal;
+    }
+}
+
+.codehilite code {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.9em; /* Decreased font size */
+    max-width: 100%;
+    box-sizing: border-box;
+    display: block; /* Ensure code element respects max-width */
+}
+
+/* Styles for LaTeX equations */
+.arithmatex {
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 0.5em 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.arithmatex::-webkit-scrollbar {
+    height: 8px;
+}
+
+.arithmatex::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.arithmatex::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.arithmatex::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+@media screen and (max-width: 768px) {
+    .arithmatex {
+        overflow-x: auto;
+        font-size: 0.85em;
+        max-width: 100%;
+    }
+    
+    /* Contain the equation within the parent container */
+    .arithmatex div {
+        display: inline-block;
+        max-width: 100%;
+        min-width: 100%;
+    }
+    
+    /* Ensure the container doesn't cause page overflow */
+    .content .arithmatex {
+        max-width: 100vw;
+        overflow-x: auto;
+    }
+}
+
+footer {
+    margin-top: auto;
+    padding: 1em 0;
+    text-align: center;
+    font-size: 0.8em;
+    color: #aaa;
+    font-family: 'Fira Code', monospace;
+}
+
+.social-icons {
+    margin-top: 1em;
+}
+
+.social-icons a {
+    margin: 0 0.5em;
+    color: var(--text-color);
+    text-decoration: none;
+}
+
+.social-icons a:hover {
+    color: var(--link-color);
+}
+
+.social-icons svg {
+    width: 20px;
+    height: 20px;
+}
+
+.nav-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.content img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+}
+
+.img-container {
+    position: relative;
+    cursor: pointer;
+}
+
+.img-container .zoom-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.img-container:hover .zoom-icon {
+    opacity: 1;
+}
+
+.img-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.img-overlay img {
+    max-width: 90%;
+    max-height: 90%;
+}
+
+.profile-image-container {
+    width: 250px;
+    height: 250px;
+    border-radius: 50%;
+    overflow: hidden;
+    margin: 0 auto 2em auto;
+}
+
+.profile-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.centered-quote {
+    text-align: center;
+    font-family: 'Merriweather', serif;
+    font-style: italic;
+    font-size: 1.5em;
+    margin: 2em auto;
+    max-width: 80%;
+}
